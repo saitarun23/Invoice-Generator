@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Invoice Generator</title>
+  <style>
+    .container {
+      max-width: 800px;
+      margin: auto;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .container h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .container div {
+      margin-bottom: 10px;
+    }
+    .container label {
+      display: block;
+      margin-bottom: 5px;
+    }
+    .container input {
+      width: calc(100% - 22px);
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .container .item {
+      margin-bottom: 20px;
+    }
+    .container button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      background-color: #28a745;
+      color: #fff;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    .container button:last-child {
+      background-color: #007bff;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Invoice Generator</h1>
+    <form id="invoiceForm">
+      <div>
+        <label for="customerName">Customer Name:</label>
+        <input type="text" id="customerName" name="customerName" required>
+      </div>
+      <div>
+        <label for="customerAddress">Customer Address:</label>
+        <input type="text" id="customerAddress" name="customerAddress" required>
+      </div>
+      <div>
+        <label for="invoiceNumber">Invoice Number:</label>
+        <input type="text" id="invoiceNumber" name="invoiceNumber" required>
+      </div>
+      <div>
+        <label for="issueDate">Date of Issue:</label>
+        <input type="date" id="issueDate" name="issueDate" required>
+      </div>
+      <div>
+        <label for="dueDate">Due Date:</label>
+        <input type="date" id="dueDate" name="dueDate" required>
+      </div>
+      <div id="itemsContainer">
+        <div class="item">
+          <label>Item Description:</label>
+          <input type="text" class="itemDescription" required>
+          <label>Quantity:</label>
+          <input type="number" class="itemQuantity" required>
+          <label>Unit Price:</label>
+          <input type="number" class="itemUnitPrice" required>
+        </div>
+      </div>
+      <button type="button" onclick="addItem()">Add Item</button>
+      <button type="button" onclick="generateInvoice()">Generate Invoice</button>
+    </form>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+  <script>
+    function addItem() {
+      const itemsContainer = document.getElementById('itemsContainer');
+      const newItem = document.createElement('div');
+      newItem.className = 'item';
+      newItem.innerHTML = `
+        <label>Item Description:</label>
+        <input type="text" class="itemDescription" required>
+        <label>Quantity:</label>
+        <input type="number" class="itemQuantity" required>
+        <label>Unit Price:</label>
+        <input type="number" class="itemUnitPrice" required>
+      `;
+      itemsContainer.appendChild(newItem);
+    }
+
+    function generateInvoice() {
+      const customerName = document.getElementById('customerName').value;
+      const customerAddress = document.getElementById('customerAddress').value;
+      const invoiceNumber = document.getElementById('invoiceNumber').value;
+      const issueDate = document.getElementById('issueDate').value;
+      const dueDate = document.getElementById('dueDate').value;
+
+      const items = [];
+      document.querySelectorAll('.item').forEach(item => {
+        const description = item.querySelector('.itemDescription').value;
+        const quantity = parseFloat(item.querySelector('.itemQuantity').value);
+        const unitPrice = parseFloat(item.querySelector('.itemUnitPrice').value);
+        items.push({ description, quantity, unitPrice });
+      });
+
+      let subtotal = 0;
+      items.forEach(item => {
+        subtotal += item.quantity * item.unitPrice;
+      });
+
+      const taxRate = 0.1;
+      const tax = subtotal * taxRate;
+      const discount = 0;
+      const total = subtotal + tax - discount;
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      doc.text(`Invoice Number: ${invoiceNumber}`, 10, 10);
+      doc.text(`Date of Issue: ${issueDate}`, 10, 20);
+      doc.text(`Due Date: ${dueDate}`, 10, 30);
+      doc.text(`Customer Name: ${customerName}`, 10, 40);
+      doc.text(`Customer Address: ${customerAddress}`, 10, 50);
+
+      doc.text('Items:', 10, 70);
+      let yPosition = 80;
+      items.forEach(item => {
+        doc.text(`${item.description} - Quantity: ${item.quantity} - Unit Price: $${item.unitPrice}`, 10, yPosition);
+        yPosition += 10;
+      });
+
+      doc.text(`Subtotal: $${subtotal.toFixed(2)}`, 10, yPosition + 10);
+      doc.text(`Tax (10%): $${tax.toFixed(2)}`, 10, yPosition + 20);
+      doc.text(`Discount: $${discount.toFixed(2)}`, 10, yPosition + 30);
+      doc.text(`Total: $${total.toFixed(2)}`, 10, yPosition + 40);
+
+      doc.save('invoice.pdf');
+    }
+  </script>
+</body>
+</html>
